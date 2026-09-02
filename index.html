@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Livres d’Ambierle — Village du Livre</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Georgia,serif;color:#2e241d;background:#f5efe5}
+.hero{min-height:420px;padding:48px 7%;display:flex;align-items:end;background-image:linear-gradient(180deg,rgba(30,22,14,.10),rgba(30,22,14,.62)),url("ambierle.jpg");background-size:cover;background-position:center 42%;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 25%,rgba(255,255,255,.2),transparent 30%),linear-gradient(180deg,transparent 40%,rgba(25,18,12,.5));}
+.hero>*{position:relative}.brand{color:white;max-width:780px}.eyebrow{letter-spacing:3px;text-transform:uppercase;font-size:14px}.brand h1{font-size:clamp(42px,7vw,78px);margin:12px 0}.tag{font-size:24px}.panel{position:absolute;right:7%;top:48px;background:#fffaf0eF;padding:25px;max-width:320px;border:1px solid #b9a27f;box-shadow:0 12px 35px #24180f33}.panel strong{font-size:22px}
+.wrap{max-width:1200px;margin:auto;padding:35px 20px}.intro{text-align:center}.intro h2{font-size:32px;margin:0 0 10px}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:25px 0}.tools input,.tools select{padding:13px;border:1px solid #cbbda9;background:white;border-radius:6px;font-size:15px}.tools input{flex:1;min-width:240px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}.card{background:white;border:1px solid #dfd4c4;padding:18px;border-radius:8px;display:flex;flex-direction:column;min-height:240px;box-shadow:0 3px 12px #4d3b2b12}.card h3{margin:0 0 10px;font-size:19px;line-height:1.25}.meta{color:#786a5c;font-size:13px;flex:1}.price{font-size:22px;font-weight:bold;margin:14px 0}.btn{border:0;background:#4d3b2b;color:white;padding:11px;border-radius:6px;cursor:pointer}.count{margin-left:auto;font-weight:bold}.cart{position:fixed;right:18px;bottom:18px;background:#fffaf0;border:1px solid #b9a27f;padding:14px 18px;border-radius:8px;box-shadow:0 8px 25px #0002}.cart button{margin-left:10px}.empty{text-align:center;padding:40px;color:#786a5c}
+footer{text-align:center;padding:35px;color:#786a5c}
+@media(max-width:700px){.panel{position:relative;right:auto;top:auto;margin-top:20px}.hero{display:block;padding-top:30px}.tag{font-size:19px}}
+</style></head>
+<body>
+<header class="hero"><div class="brand"><div class="eyebrow">Village du Livre d’Ambierle</div><h1>Livres d’Ambierle</h1><div class="tag">Des trésors à feuilleter, à chérir, à partager.</div></div><div class="panel"><strong>Bienvenue à Ambierle</strong><p>Livres anciens, littérature, BD, revues, histoire, patrimoine et science-fiction.</p><p><b>Notre catalogue</b><br><span id="heroCount"></span> ouvrages au catalogue.</p></div></header>
+<main class="wrap"><section class="intro"><h2>Le catalogue du Village du Livre</h2><p>Explorez les ouvrages disponibles et ajoutez vos trouvailles au panier.</p></section>
+<div class="tools"><input id="search" placeholder="Rechercher un titre, ISBN ou EAN…"><select id="sort"><option value="title">Titre A–Z</option><option value="priceAsc">Prix croissant</option><option value="priceDesc">Prix décroissant</option></select><span class="count" id="count"></span></div>
+<div id="grid" class="grid"></div><div id="empty" class="empty" style="display:none">Aucun ouvrage ne correspond à votre recherche.</div></main>
+<div class="cart">🛒 Panier : <b id="cartCount">0</b> livre(s) — <b id="cartTotal">0,00 €</b> <button class="btn" onclick="showCart()">Voir</button></div>
+<footer>Livres d’Ambierle — Village du Livre d’Ambierle</footer>
+<script>
+let books=[],cart=[];
+const euro=n=>n==null?'Prix sur demande':n.toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+fetch('books.json').then(r=>r.json()).then(d=>{books=d;document.getElementById('heroCount').textContent=d.length;render()});
+function render(){let q=document.getElementById('search').value.toLowerCase(),s=document.getElementById('sort').value;
+let a=books.filter(b=>(b.title+' '+b.isbn+' '+b.ean).toLowerCase().includes(q));
+a.sort((x,y)=>s==='priceAsc'?(x.price??99999)-(y.price??99999):s==='priceDesc'?(y.price??-1)-(x.price??-1):x.title.localeCompare(y.title,'fr'));
+document.getElementById('count').textContent=a.length+' ouvrage(s)';document.getElementById('empty').style.display=a.length?'none':'block';
+document.getElementById('grid').innerHTML=a.map(b=>`<article class="card"><h3>${esc(b.title)}</h3><div class="meta">${b.condition?esc(b.condition):''}${b.isbn?'<br>ISBN : '+esc(b.isbn):''}${b.stock?'':'<br>Rupture de stock'}</div><div class="price">${euro(b.price)}</div><button class="btn" ${!b.stock?'disabled':''} onclick="add(${books.indexOf(b)})">${b.stock?'Ajouter au panier':'Indisponible'}</button></article>`).join('')}
+function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function add(i){cart.push(books[i]);update()}
+function update(){document.getElementById('cartCount').textContent=cart.length;document.getElementById('cartTotal').textContent=euro(cart.reduce((s,b)=>s+(b.price||0),0))}
+function showCart(){alert(cart.length?cart.map((b,i)=>(i+1)+'. '+b.title+' — '+euro(b.price)).join('\n')+'\n\nTotal : '+euro(cart.reduce((s,b)=>s+(b.price||0),0)):'Votre panier est vide.')}
+document.getElementById('search').oninput=render;document.getElementById('sort').onchange=render;
+</script></body></html>
